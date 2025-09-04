@@ -8,8 +8,8 @@ services:
       - .:/app
     restart: unless-stopped
     networks:
-      - pydantic-ai-multi-agent-hr-agent_app_network_pyd:
+      - pydantic-ai-multi-agent-hr-agent_app_network_pyd
 
 networks:
-  pydantic-ai-multi-agent-hr-agent_app_network_pyd::
+  pydantic-ai-multi-agent-hr-agent_app_network_pyd:
     external: true
