@@ -8,8 +8,8 @@ services:
       - .:/app
     restart: unless-stopped
     networks:
-      - story_mcp_server_network
+      - pydantic-ai-multi-agent-hr-agent_app_network_pyd:
 
 networks:
-  story_mcp_server_network:
-    external: false
+  pydantic-ai-multi-agent-hr-agent_app_network_pyd::
+    external: true
