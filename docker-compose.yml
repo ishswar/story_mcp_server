@@ -1,0 +1,15 @@
+
+services:
+  story_mcp_server:
+    build: .
+    ports:
+      - "8082:8082"
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    networks:
+      - story_mcp_server_network
+
+networks:
+  story_mcp_server_network:
+    external: false

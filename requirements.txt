@@ -1,0 +1,11 @@
+mcp[cli]
+requests
+requests_toolbelt
+playwright
+python-dotenv
+rich
+uvicorn
+pydantic
+httpx
+anyio
+fastmcp
