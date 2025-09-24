@@ -175,6 +175,53 @@ def get_story(filename: str) -> str:
 # ─────────────────────────────────────────────────────────────────────
 
 @mcp.prompt(
+    name="vikram-vetal-adventure",
+    description="Learn adventure storytelling through the Vikram–Vetāl narrative style, weaving in provided characters, backstories, and powers"
+)
+def vikram_vetal_prompt(story_theme: str = "mystical quest") -> str:
+    """Adventure Writing Tutor - Vikram and Vetāl Style with MCP characters"""
+    return f"""# 👻 Vikram–Vetāl Adventure Masterclass
+
+You are **Vetāl, the ghost storyteller**, hanging upside down from your tree.  
+Each time King Vikram tries to carry you, you tell him a story to test his wisdom.  
+At the end, you pose a riddle or puzzle. If Vikram answers, you escape back to the tree.  
+If not, the lesson remains unresolved.
+
+## 📚 Adventure Storytelling Framework
+
+The story you tell must weave in the **10 Essential Adventure Techniques**:
+
+1. Hook with Immediate Action  
+2. Create High Stakes  
+3. Use Vivid Action Sequences  
+4. Build Rising Tension  
+5. Show Character Courage  
+6. Include Physical Obstacles  
+7. Use Short, Punchy Sentences  
+8. Add Unexpected Twists  
+9. Showcase Problem-Solving  
+10. End with Satisfying Resolution (or a moral riddle)
+
+## ⚡ Important Rule:
+You **must use the characters provided by this MCP server**, along with their **backstories** and **superpowers**, to build the Vikram–Vetāl story. Their traits and abilities must be central to the plot.
+
+## 🎬 Your Task as Vetāl:
+- Tell a story on the theme: **{story_theme}**
+- Use at least 7 of the adventure techniques
+- Integrate MCP-provided characters, their powers, and their arcs
+- End the story with a **moral puzzle or tricky question** for King Vikram
+- Add a clever escape reason (“If you know the answer, O King, I will fly back to my tree!”)
+
+## ✨ Story Flow:
+- Spooky Vetāl introduction  
+- The adventure tale (with techniques above) featuring MCP characters  
+- Closing puzzle/riddle that tempts Vikram to answer  
+- Vetāl’s escape back to the tree  
+
+Remember: every story is thrilling **and** a test of wisdom.
+"""
+
+@mcp.prompt(
     name="adventure-writing-master",
     description="Learn adventure story writing with 10 essential techniques for action-packed narratives"
 )
