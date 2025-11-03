@@ -7,6 +7,7 @@ import json
 
 from fastmcp import FastMCP, Context
 from fastmcp.server.dependencies import get_http_request, get_http_headers
+from fastmcp.exceptions import ToolError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -360,7 +361,7 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
         error_message = "X-Atmosphere-Token header is required but was not found in the request"
         session_logger.error(f"FAILED to save story: {error_message}")
         await ctx.error(f"Failed to save story: {error_message}")
-        return f"Error: {error_message}. Story was not saved."
+        raise ToolError(error_message)
 
     # Validate and truncate JWT token
     token_valid, truncated_token, error_msg = validate_and_truncate_jwt(atmosphere_token)
@@ -369,7 +370,7 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
         error_message = f"Incoming atmosphere token was not correct: {error_msg}"
         session_logger.error(error_message)
         await ctx.error(f"Invalid atmosphere token: {error_msg}")
-        return f"Error: {error_message}. Story was not saved."
+        raise ToolError(error_message)
 
     session_logger.info(f"Atmosphere token validated and truncated successfully")
     session_logger.info(f"Extracted headers - Conversation ID: {conversation_id}, Session ID: {session_id_header}, Token: {truncated_token}")
