@@ -45,9 +45,67 @@ docker compose up --build
 
 ### 🛠 Local Run (for development)
 
+#### Recommended: Using Dedicated Virtual Environment
+
+To avoid dependency conflicts with other projects, use the dedicated virtual environment:
+
+```bash
+# 1. Create virtual environment (first time only)
+python3 -m venv venv
+
+# 2. Install dependencies
+./venv/bin/pip install -r requirements.txt
+
+# 3. Run the server using the startup script
+./start_server.sh
+```
+
+Or run directly with:
+
+```bash
+./venv/bin/python story_mcp_server.py
+```
+
+#### Quick Install (system-wide or existing environment)
+
 ```bash
 pip install fastmcp
 python story_mcp_server.py
+```
+
+**Note:** This project requires `uvicorn<0.38.0` due to a compatibility issue with FastMCP. The `requirements.txt` file includes this constraint.
+
+---
+
+### 🔧 Troubleshooting
+
+#### Server won't start - KeyError: 'websockets-sansio'
+
+This error occurs with uvicorn 0.38.0+. Solutions:
+
+1. **Use the dedicated venv** (recommended):
+   ```bash
+   ./venv/bin/python story_mcp_server.py
+   ```
+
+2. **Check uvicorn version**:
+   ```bash
+   pip list | grep uvicorn
+   # Should show: uvicorn 0.37.0 or earlier
+   ```
+
+3. **Reinstall with correct version**:
+   ```bash
+   pip install "uvicorn[standard]<0.38.0" --force-reinstall
+   ```
+
+#### Using the wrong Python environment
+
+Always use the venv Python to ensure correct dependencies:
+
+```bash
+./venv/bin/python story_mcp_server.py  # ✅ Correct
+python story_mcp_server.py              # ❌ May use wrong environment
 ```
 
 ---
@@ -60,7 +118,9 @@ python story_mcp_server.py
 ├── docker-compose.yml        # Compose file for container orchestration
 ├── story_mcp_server.py      # Main MCP server implementation
 ├── requirements.txt         # Python dependencies
+├── start_server.sh          # Startup script for local development
 ├── story_server.log        # Server logs
+├── venv/                   # Virtual environment (created locally)
 └── README.md
 ```
 

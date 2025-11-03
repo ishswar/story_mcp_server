@@ -51,3 +51,6 @@ ENV/
 # Markdown files (except README.md)
 *.md
 !README.md
+
+# Playground directory (demo and test files)
+playground/
