@@ -4,7 +4,7 @@ requests_toolbelt
 playwright
 python-dotenv
 rich
-uvicorn
+uvicorn[standard]<0.38.0
 pydantic
 httpx
 anyio
