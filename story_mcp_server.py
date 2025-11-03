@@ -2,6 +2,8 @@ import os
 import logging
 from datetime import datetime
 import asyncio
+import base64
+import json
 
 from fastmcp import FastMCP, Context
 from fastmcp.server.dependencies import get_http_request, get_http_headers
@@ -278,6 +280,58 @@ def sanitize_filename(title: str) -> str:
     return filename + ".md"
 
 
+def validate_and_truncate_jwt(token: str) -> tuple[bool, str, str]:
+    """
+    Validate JWT token structure and truncate for display.
+
+    Returns:
+        tuple: (is_valid, truncated_token, error_message)
+    """
+    if not token or token == 'N/A':
+        return True, 'N/A', ''
+
+    try:
+        # JWT tokens have 3 parts separated by dots: header.payload.signature
+        parts = token.split('.')
+        if len(parts) != 3:
+            logger.error(f"Invalid JWT structure: expected 3 parts, got {len(parts)}")
+            return False, token[:10] + '...[INVALID]', 'Invalid JWT structure: token must have 3 parts (header.payload.signature)'
+
+        # Try to decode the header and payload to validate base64 encoding
+        try:
+            # Add padding if needed for base64 decoding
+            header = parts[0]
+            payload = parts[1]
+
+            # Decode header
+            header_padding = '=' * (4 - len(header) % 4) if len(header) % 4 else ''
+            header_decoded = base64.urlsafe_b64decode(header + header_padding)
+            header_json = json.loads(header_decoded)
+
+            # Decode payload
+            payload_padding = '=' * (4 - len(payload) % 4) if len(payload) % 4 else ''
+            payload_decoded = base64.urlsafe_b64decode(payload + payload_padding)
+            payload_json = json.loads(payload_decoded)
+
+            logger.info(f"JWT token validated successfully - Issuer: {payload_json.get('iss', 'unknown')}, Subject: {payload_json.get('sub', 'unknown')[:20]}...")
+
+        except (base64.binascii.Error, json.JSONDecodeError) as e:
+            logger.error(f"Failed to decode JWT token: {e}")
+            return False, token[:10] + '...[INVALID]', f'Failed to decode JWT token: {str(e)}'
+
+        # Truncate: first 10 chars ... last 10 chars
+        if len(token) > 30:
+            truncated = f"{token[:10]}...{token[-10:]}"
+        else:
+            truncated = token
+
+        return True, truncated, ''
+
+    except Exception as e:
+        logger.error(f"Error validating JWT token: {e}")
+        return False, token[:10] + '...[ERROR]', f'Error validating token: {str(e)}'
+
+
 @mcp.tool(description="Save a story to a markdown file with title and creation date.")
 async def save_story(title: str, content: str, ctx: Context) -> str:
     # Log HTTP headers
@@ -301,7 +355,18 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
     session_id_header = headers.get('x-session-id', 'N/A')
     atmosphere_token = headers.get('x-atmosphere-token', 'N/A')
 
-    session_logger.info(f"Extracted headers - Conversation ID: {conversation_id}, Session ID: {session_id_header}, Token: {'present' if atmosphere_token != 'N/A' else 'N/A'}")
+    # Validate and truncate JWT token
+    token_valid, truncated_token, error_msg = validate_and_truncate_jwt(atmosphere_token)
+
+    if not token_valid:
+        session_logger.error(f"Incoming atmosphere token was not correct: {error_msg}")
+        await ctx.error(f"Invalid atmosphere token: {error_msg}")
+        # Still continue to save the story, but with the error indicator
+    else:
+        if atmosphere_token != 'N/A':
+            session_logger.info(f"Atmosphere token validated and truncated successfully")
+
+    session_logger.info(f"Extracted headers - Conversation ID: {conversation_id}, Session ID: {session_id_header}, Token: {truncated_token}")
 
     try:
         with open(filename, "w", encoding="utf-8") as f:
@@ -316,7 +381,11 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
             f.write("## Request Metadata\n\n")
             f.write(f"**Conversation ID:** {conversation_id}\n\n")
             f.write(f"**X-Session-ID:** {session_id_header}\n\n")
-            f.write(f"**X-Atmosphere-Token:** {atmosphere_token}\n")
+            f.write(f"**X-Atmosphere-Token:** {truncated_token}\n")
+
+            # Add validation status if there was an error
+            if not token_valid and error_msg:
+                f.write(f"\n**Token Validation Error:** {error_msg}\n")
 
         session_logger.info(f"Successfully saved story to: {os.path.abspath(filename)}")
         await ctx.info(f"Story saved to {filename}")
