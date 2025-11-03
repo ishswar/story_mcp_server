@@ -355,17 +355,23 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
     session_id_header = headers.get('x-session-id', 'N/A')
     atmosphere_token = headers.get('x-atmosphere-token', 'N/A')
 
+    # Check if atmosphere token is missing - FAIL if not present
+    if atmosphere_token == 'N/A':
+        error_message = "X-Atmosphere-Token header is required but was not found in the request"
+        session_logger.error(f"FAILED to save story: {error_message}")
+        await ctx.error(f"Failed to save story: {error_message}")
+        return f"Error: {error_message}. Story was not saved."
+
     # Validate and truncate JWT token
     token_valid, truncated_token, error_msg = validate_and_truncate_jwt(atmosphere_token)
 
     if not token_valid:
-        session_logger.error(f"Incoming atmosphere token was not correct: {error_msg}")
+        error_message = f"Incoming atmosphere token was not correct: {error_msg}"
+        session_logger.error(error_message)
         await ctx.error(f"Invalid atmosphere token: {error_msg}")
-        # Still continue to save the story, but with the error indicator
-    else:
-        if atmosphere_token != 'N/A':
-            session_logger.info(f"Atmosphere token validated and truncated successfully")
+        return f"Error: {error_message}. Story was not saved."
 
+    session_logger.info(f"Atmosphere token validated and truncated successfully")
     session_logger.info(f"Extracted headers - Conversation ID: {conversation_id}, Session ID: {session_id_header}, Token: {truncated_token}")
 
     try:
@@ -382,10 +388,6 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
             f.write(f"**Conversation ID:** {conversation_id}\n\n")
             f.write(f"**X-Session-ID:** {session_id_header}\n\n")
             f.write(f"**X-Atmosphere-Token:** {truncated_token}\n")
-
-            # Add validation status if there was an error
-            if not token_valid and error_msg:
-                f.write(f"\n**Token Validation Error:** {error_msg}\n")
 
         session_logger.info(f"Successfully saved story to: {os.path.abspath(filename)}")
         await ctx.info(f"Story saved to {filename}")
