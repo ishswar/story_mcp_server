@@ -379,14 +379,14 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
         with open(filename, "w", encoding="utf-8") as f:
             f.write(f"# {title}\n\n")
             f.write(f"**Date Created:** {date_created}\n\n")
-            f.write(f"**Session ID:** {ctx.session_id or 'stateless'}\n\n")
-            f.write(f"**Request ID:** {ctx.request_id}\n\n")
             f.write(content)
 
             # Add metadata section at the bottom
             f.write("\n\n---\n\n")
             f.write("## Request Metadata\n\n")
-            f.write(f"**Conversation ID:** {conversation_id}\n\n")
+            f.write(f"**MCP-Session-ID:** {ctx.session_id or 'stateless'}\n\n")
+            f.write(f"**MCP-Request-ID:** {ctx.request_id}\n\n")
+            f.write(f"**X-Conversation-ID:** {conversation_id}\n\n")
             f.write(f"**X-Session-ID:** {session_id_header}\n\n")
             f.write(f"**X-Atmosphere-Token:** {truncated_token}\n")
 
