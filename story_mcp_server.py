@@ -164,6 +164,54 @@ CHARACTERS = {
 }
 
 # ─────────────────────────────────────────────────────────────────────
+# Nickname Tool - Returns error for "Ram" to test isError handling
+# ─────────────────────────────────────────────────────────────────────
+
+@mcp.tool(description="Get a fun nickname for a character. Works for Jack and Robert, but Ram's nickname is classified.")
+async def get_nickname(character: str, ctx: Context) -> str:
+    """
+    Get a fun nickname for a story character.
+
+    Args:
+        character: The character name (Jack, Ram, or Robert)
+
+    Returns:
+        The character's nickname, or raises an error for Ram (classified information)
+    """
+    session_logger = get_session_logger(ctx)
+    log_http_headers()
+
+    await log_session_info(ctx, f"get_nickname({character})")
+
+    # Nicknames for characters (except Ram - that's classified!)
+    nicknames = {
+        "Jack": "Shadow Jack - The Invisible Whisper",
+        "Robert": "RoboCop Bob - Half Man, Half Machine"
+    }
+
+    session_logger.info(f"Getting nickname for character: {character}")
+
+    if character.lower() == "ram":
+        # This is our test case - Ram's nickname is "classified" and returns isError=True
+        error_msg = f"ACCESS DENIED: Ram's nickname is classified information. Security clearance level 5 required."
+        session_logger.error(f"Nickname request denied for Ram: {error_msg}")
+        await ctx.error(error_msg)
+        raise ToolError(error_msg)
+
+    nickname = nicknames.get(character)
+    if nickname:
+        session_logger.info(f"Found nickname for {character}: {nickname}")
+        await ctx.info(f"Retrieved nickname for {character}")
+        return nickname
+    else:
+        # Unknown character - also return error
+        error_msg = f"Character '{character}' not found in the story database."
+        session_logger.warning(error_msg)
+        await ctx.warning(error_msg)
+        raise ToolError(error_msg)
+
+
+# ─────────────────────────────────────────────────────────────────────
 # Session Debugging Tools
 # ─────────────────────────────────────────────────────────────────────
 
