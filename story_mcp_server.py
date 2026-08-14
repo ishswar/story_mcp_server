@@ -164,10 +164,43 @@ CHARACTERS = {
 }
 
 # ─────────────────────────────────────────────────────────────────────
+# MCP tool annotations
+# ─────────────────────────────────────────────────────────────────────
+# The MCP spec makes `readOnlyHint` OPTIONAL and defaults an ABSENT value to
+# FALSE — a consumer must treat an unannotated tool as a WRITE. Consent/gating
+# layers (e.g. TESSA) act on that and hide every unannotated tool, which made
+# this whole server invisible. So each tool below declares its hints explicitly.
+#
+# `idempotentHint` here means "repeating the call adds no further side effect",
+# NOT "the response is byte-identical".
+
+READ_ONLY = {
+    "readOnlyHint": True,
+    "destructiveHint": False,
+    "idempotentHint": True,
+    "openWorldHint": False,  # everything is served from in-process data / local files
+}
+
+# save_story is the ONE genuine write on this server: it opens a file in the
+# server's working directory with mode "w", so it creates a new story file or
+# silently OVERWRITES an existing one with the same sanitized title. It is
+# therefore not read-only, is potentially destructive, and is not idempotent.
+WRITE_STORY = {
+    "title": "Save story to a markdown file",
+    "readOnlyHint": False,
+    "destructiveHint": True,
+    "idempotentHint": False,
+    "openWorldHint": False,
+}
+
+# ─────────────────────────────────────────────────────────────────────
 # Nickname Tool - Returns error for "Ram" to test isError handling
 # ─────────────────────────────────────────────────────────────────────
 
-@mcp.tool(description="Get a fun nickname for a character. Works for Jack and Robert, but Ram's nickname is classified.")
+@mcp.tool(
+    description="Get a fun nickname for a character. Works for Jack and Robert, but Ram's nickname is classified.",
+    annotations={"title": "Get character nickname", **READ_ONLY},
+)
 async def get_nickname(character: str, ctx: Context) -> str:
     """
     Get a fun nickname for a story character.
@@ -215,7 +248,10 @@ async def get_nickname(character: str, ctx: Context) -> str:
 # Session Debugging Tools
 # ─────────────────────────────────────────────────────────────────────
 
-@mcp.tool(description="Debug session information and transport details")
+@mcp.tool(
+    description="Debug session information and transport details",
+    annotations={"title": "Debug session/transport", **READ_ONLY},
+)
 async def debug_session(ctx: Context) -> dict:
     """Debug tool to understand session behavior."""
     # Log HTTP headers
@@ -262,7 +298,10 @@ async def debug_session(ctx: Context) -> dict:
 # Updated Tools with Robust Session Logging
 # ─────────────────────────────────────────────────────────────────────
 
-@mcp.tool(description="Get the list of all available character names.")
+@mcp.tool(
+    description="Get the list of all available character names.",
+    annotations={"title": "List characters", **READ_ONLY},
+)
 async def get_characters(ctx: Context) -> list[str]:
     # Log HTTP headers
     log_http_headers()
@@ -277,7 +316,10 @@ async def get_characters(ctx: Context) -> list[str]:
     return characters
 
 
-@mcp.tool(description="Get the backstory of a specified character.")
+@mcp.tool(
+    description="Get the backstory of a specified character.",
+    annotations={"title": "Get character backstory", **READ_ONLY},
+)
 async def get_backstory(character: str, ctx: Context) -> str:
     # Log HTTP headers
     log_http_headers()
@@ -298,7 +340,10 @@ async def get_backstory(character: str, ctx: Context) -> str:
     return backstory
 
 
-@mcp.tool(description="Get the superpower of a specified character.")
+@mcp.tool(
+    description="Get the superpower of a specified character.",
+    annotations={"title": "Get character superpower", **READ_ONLY},
+)
 async def get_superpower(character: str, ctx: Context) -> str:
     session_logger = get_session_logger(ctx)
     await log_session_info(ctx, f"get_superpower({character})")
@@ -381,7 +426,10 @@ def validate_and_truncate_jwt(token: str) -> tuple[bool, str, str]:
         return False, token[:10] + '...[ERROR]', f'Error validating token: {str(e)}'
 
 
-@mcp.tool(description="Save a story to a markdown file with title and creation date.")
+@mcp.tool(
+    description="Save a story to a markdown file with title and creation date.",
+    annotations=WRITE_STORY,
+)
 async def save_story(title: str, content: str, ctx: Context) -> str:
     # Log HTTP headers
     log_http_headers()
@@ -447,7 +495,10 @@ async def save_story(title: str, content: str, ctx: Context) -> str:
         return f"Error saving story: {e}"
 
 
-@mcp.tool(description="List all saved story files in markdown format.")
+@mcp.tool(
+    description="List all saved story files in markdown format.",
+    annotations={"title": "List saved stories", **READ_ONLY},
+)
 async def list_stories(reason: str, ctx: Context) -> list[str]:
     session_logger = get_session_logger(ctx)
     await log_session_info(ctx, f"list_stories(reason={reason})")
@@ -464,7 +515,10 @@ async def list_stories(reason: str, ctx: Context) -> list[str]:
         return []
 
 
-@mcp.tool(description="Read the content of a specific story file.")
+@mcp.tool(
+    description="Read the content of a specific story file.",
+    annotations={"title": "Read a saved story", **READ_ONLY},
+)
 async def get_story(filename: str, ctx: Context) -> str:
     session_logger = get_session_logger(ctx)
     await log_session_info(ctx, f"get_story({filename})")
@@ -487,7 +541,10 @@ async def get_story(filename: str, ctx: Context) -> str:
         return f"Error reading story file: {e}"
 
 
-@mcp.tool(description="Get detailed client information including MCP client details, HTTP headers, IP address, User-Agent, and operating system information")
+@mcp.tool(
+    description="Get detailed client information including MCP client details, HTTP headers, IP address, User-Agent, and operating system information",
+    annotations={"title": "Get client info", **READ_ONLY},
+)
 async def get_client_info(ctx: Context) -> dict:
     """Get comprehensive client information from MCP protocol and HTTP request."""
     session_logger = get_session_logger(ctx)
